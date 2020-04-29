@@ -58,7 +58,8 @@ package object chapter3 {
     def append[A](as1: List[A], as2: List[A]): List[A] =
       foldRight(as1, as2)(Cons(_, _))
 
-    def concat[A](ls: List[List[A]]) = foldRight(ls, Nil: List[A])(append)
+    def concat[A](ls: List[List[A]]): List[A] =
+      foldRight(ls, Nil: List[A])(append)
 
     def addOne(ints: List[Int]): List[Int] =
       foldRight(ints, Nil: List[Int])((x, acc) => Cons(x + 1, acc))
@@ -87,15 +88,31 @@ package object chapter3 {
         case (_, Nil)                   => Nil
         case (Cons(x, t1), Cons(y, t2)) => Cons(f(x, y), zipWith(t1, t2)(f))
       }
+
+    @scala.annotation.tailrec
+    def startsWith[A](sup: List[A], sub: List[A]): Boolean =
+      (sup, sub) match {
+        case (_, Nil)                                 => true
+        case (Cons(h1, t1), Cons(h2, t2)) if h1 == h2 => startsWith(t1, t2)
+        case _                                        => false
+      }
+
+    @scala.annotation.tailrec
+    def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean =
+      sup match {
+        case Nil                       => false
+        case _ if startsWith(sup, sub) => true
+        case Cons(_, t)                => hasSubsequence(t, sub)
+      }
   }
 
   def exercise1: Int = {
     List(1, 2, 3, 4, 5) match {
-      case Cons(x, Cons(2, Cons(4, _)))            => x
-      case Nil                                     => 42
-      case Cons(x, Cons(y, (Cons(3, Cons(4, _))))) => x + y
-      case Cons(h, t)                              => h + List.sum(t)
-      case _                                       => 101
+      case Cons(x, Cons(2, Cons(4, _)))          => x
+      case Nil                                   => 42
+      case Cons(x, Cons(y, Cons(3, Cons(4, _)))) => x + y
+      case Cons(h, t)                            => h + List.sum(t)
+      case _                                     => 101
     }
   }
 
@@ -105,8 +122,8 @@ package object chapter3 {
   def exercise10: Int =
     List.foldLeft(List(1, 2, 3), 1)(_ * _)
 
-  def exercise12 = List.reverse(List(1, 2, 3))
-  def exercise14 = List.append(List(3, 2, 1), List(6, 5, 4))
+  def exercise12: List[Int] = List.reverse(List(1, 2, 3))
+  def exercise14: List[Int] = List.append(List(3, 2, 1), List(6, 5, 4))
 
-  def exercise22 = List.addLists(List(1, 2, 3), List(4, 5, 6))
+  def exercise22: List[Int] = List.addLists(List(1, 2, 3), List(4, 5, 6))
 }
