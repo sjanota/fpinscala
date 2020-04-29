@@ -5,7 +5,7 @@ sealed trait Tree[+A] {
 
   def depth: Int = fold(_ => 0)((l, r) => 1 + (l max r))
 
-  def map[B](f: A => B): Tree[B] = fold[Tree[B]](v => Leaf(f(v)))(Branch(_, _))
+  def map[B](f: A => B): Tree[B] = fold(v => Leaf(f(v)): Tree[B])(Branch(_, _))
 
   def fold[B](z: A => B)(m: (B, B) => B): B = this match {
     case Leaf(value)         => z(value)
