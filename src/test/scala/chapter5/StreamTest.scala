@@ -11,4 +11,22 @@ class StreamTest extends AnyWordSpec {
       assert(Stream(3, 1, 2, 3).takeWhile(_ < 3).toList == List())
     }
   }
+
+  "forAll" should {
+    "check finite stream" in {
+      assert(Stream(1, 2, 3) forAll (_ < 5))
+      assert(!(Stream(1, 2, 3) forAll (_ < 2)))
+    }
+
+    "check infinite stream" in {
+      assert(!(infiniteStream forAll (_ < 10)))
+    }
+  }
+
+  def infiniteStream: Stream[Int] = {
+    def next(i: Int): Stream[Int] =
+      Stream.cons(i, next(i + 1))
+
+    next(0)
+  }
 }
