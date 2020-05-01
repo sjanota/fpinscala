@@ -81,4 +81,25 @@ class StreamTest extends AnyWordSpec {
       assert(Stream.fibs.take(8).toList == List(0, 1, 1, 2, 3, 5, 8, 13))
     }
   }
+
+  "zipWith" should {
+    "zip two streams" in {
+      val s1 = Stream(1, 2, 3, 4)
+      val s2 = Stream("a", "b", "c")
+      assert(
+        s1.zipWith(s2)((_, _)).toList == List((1, "a"), (2, "b"), (3, "c")))
+    }
+  }
+
+  "zipAll" should {
+    "zip two streams" in {
+      val s1 = Stream(1, 2, 3, 4)
+      val s2 = Stream("a", "b", "c")
+      assert(
+        s1.zipAll(s2).toList == List((Some(1), Some("a")),
+                                     (Some(2), Some("b")),
+                                     (Some(3), Some("c")),
+                                     (Some(4), None)))
+    }
+  }
 }

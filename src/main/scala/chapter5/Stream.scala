@@ -67,6 +67,20 @@ sealed trait Stream[+A] {
 
   def find(p: A => Boolean): Option[A] =
     filter(p).headOption
+
+  def zipWith[B, C](s: Stream[B])(f: (A, B) => C): Stream[C] =
+    unfold((this, s)) {
+      case (Empty, _)                   => None
+      case (_, Empty)                   => None
+      case (Cons(h1, t1), Cons(h2, t2)) => Some(f(h1(), h2()), (t1(), t2()))
+    }
+
+  def zipAll[B](s: Stream[B]): Stream[(Option[A], Option[B])] =
+    unfold((this, s)) {
+      case (Empty, Empty) => None
+      case (s1, s2) =>
+        Some((s1.headOption, s2.headOption), (s1.drop(1), s2.drop(1)))
+    }
 }
 
 case object Empty extends Stream[Nothing]
