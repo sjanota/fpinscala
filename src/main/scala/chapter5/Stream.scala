@@ -86,6 +86,12 @@ sealed trait Stream[+A] {
     zipAll(s).takeWhile(_._2.isDefined) forAll {
       case (h1, h2) => h1 == h2
     }
+
+  def tails: Stream[Stream[A]] =
+    unfold(this) {
+      case Empty => None
+      case s     => Some((s, s drop 1))
+    } append Stream(empty)
 }
 
 case object Empty extends Stream[Nothing]

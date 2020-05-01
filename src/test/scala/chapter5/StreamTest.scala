@@ -127,4 +127,23 @@ class StreamTest extends AnyWordSpec {
       assert(!(s startsWith p))
     }
   }
+
+  "tails" should {
+    "handle empty stream" in {
+      assert(
+        Stream().tails.map(_.toList).toList == List(List())
+      )
+    }
+
+    "return all possible suffixes" in {
+      assert(
+        Stream(1, 2, 3).tails.map(_.toList).toList == List(
+          List(1, 2, 3),
+          List(2, 3),
+          List(3),
+          List()
+        )
+      )
+    }
+  }
 }
