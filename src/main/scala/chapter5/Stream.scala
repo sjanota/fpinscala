@@ -78,21 +78,20 @@ object Stream {
   def apply[A](as: A*): Stream[A] =
     if (as.isEmpty) empty else cons(as.head, apply(as.tail: _*))
 
+  val fibs: Stream[Int] =
+    unfold((0, 1))(s => Option((s._1, (s._2, s._1 + s._2))))
+
   def constant[A](a: A): Stream[A] =
-    cons(a, constant(a))
+    unfold(a)(_ => Option((a, a)))
 
-  def from(n: Int): Stream[Int] = {
-    def next(i: Int): Stream[Int] =
-      cons(i, next(i + 1))
+  def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = {
+    def next(s: S): Stream[A] =
+      f(s).map(r => cons(r._1, next(r._2))) getOrElse empty[A]
 
-    next(n)
+    next(z)
   }
 
-  val fibs: Stream[Int] = {
-    def next(a1: Int, a2: Int): Stream[Int] =
-      cons(a1, next(a2, a1 + a2))
-
-    next(0, 1)
-  }
+  def from(n: Int): Stream[Int] =
+    unfold(n)(s => Option((s, s + 1)))
 
 }
