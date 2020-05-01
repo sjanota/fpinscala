@@ -1,6 +1,7 @@
 package chapter5
 
 import org.scalatest.wordspec.AnyWordSpec
+
 class StreamTest extends AnyWordSpec {
   "takeWhile" should {
     "return matching elements" in {
@@ -180,4 +181,16 @@ class StreamTest extends AnyWordSpec {
       )
     }
   }
+
+  "scanRight" should {
+    val n = 400
+    val s = Stream(List.fill(n)(1): _*)
+    val expected = List.range(n, -1, -1)
+    "handle a lot of elements" in {
+      assert(
+        s.scanRight(0)((x, b) => x + b).toList == expected
+      )
+    }
+  }
+
 }

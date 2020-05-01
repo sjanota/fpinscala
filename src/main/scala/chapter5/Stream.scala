@@ -88,13 +88,17 @@ sealed trait Stream[+A] {
     }
 
   def tails: Stream[Stream[A]] =
-    unfold(this) {
-      case Empty => None
-      case s     => Some((s, s drop 1))
-    } append Stream(empty)
+    scanRight(empty[A])((x, t) => cons(x, t))
 
   def hasSubsequence[B >: A](s: Stream[B]): Boolean =
     tails exists (_ startsWith s)
+
+  def scanRight[B](z: => B)(f: (A, => B) => B): Stream[B] =
+    foldRight((z, Stream(z))) { (h, b) =>
+      lazy val b2 = b
+      val h2 = f(h, b2._1)
+      (h2, cons(h2, b2._2))
+    }._2
 }
 
 case object Empty extends Stream[Nothing]
@@ -128,5 +132,4 @@ object Stream {
 
   def from(n: Int): Stream[Int] =
     unfold(n)(s => Option((s, s + 1)))
-
 }
