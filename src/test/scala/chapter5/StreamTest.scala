@@ -146,4 +146,38 @@ class StreamTest extends AnyWordSpec {
       )
     }
   }
+
+  "hasSubsequence" should {
+    "pass for empty subsequence" in {
+      assert(
+        Stream(1, 2, 3) hasSubsequence Stream.empty
+      )
+    }
+    "pass for one element subsequence" in {
+      assert(
+        Stream(1, 2, 3) hasSubsequence Stream(2)
+      )
+    }
+    "pass for longer subsequence" in {
+      assert(
+        Stream(1, 2, 3, 6, 5) hasSubsequence Stream(2, 3, 6)
+      )
+    }
+    "pass for duplicated element" in {
+      assert(
+        Stream(1, 2, 2, 3, 6, 5) hasSubsequence Stream(2, 3, 6)
+      )
+    }
+
+    "fail for empty list" in {
+      assert(
+        !(Stream.empty hasSubsequence Stream(2, 3, 6))
+      )
+    }
+    "fail for not matching subsequence" in {
+      assert(
+        !(Stream(1, 2, 3, 6, 5) hasSubsequence Stream(2, 3, 5))
+      )
+    }
+  }
 }
