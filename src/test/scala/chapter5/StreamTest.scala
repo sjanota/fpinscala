@@ -1,7 +1,7 @@
 package chapter5
 
+import chapter5.StreamTest._
 import org.scalatest.wordspec.AnyWordSpec
-
 class StreamTest extends AnyWordSpec {
   "takeWhile" should {
     "return matching elements" in {
@@ -71,6 +71,14 @@ class StreamTest extends AnyWordSpec {
     }
   }
 
+  "filter" should {
+    "skip elements in stream" in {
+      assert(Stream(1, 2, 3, 4).filter(_ % 2 == 0).toList == List(2, 4))
+    }
+  }
+}
+
+object StreamTest {
   def infiniteStream: Stream[Int] = {
     def next(i: Int): Stream[Int] =
       Stream.cons(i, next(i + 1))
