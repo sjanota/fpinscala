@@ -102,4 +102,29 @@ class StreamTest extends AnyWordSpec {
                                      (Some(4), None)))
     }
   }
+
+  "startsWith" should {
+    "pass for a prefix" in {
+      val s = Stream(1, 2, 3, 4, 5)
+      val p = Stream(1, 2, 3)
+      assert(s startsWith p)
+    }
+
+    "pass for same stream" in {
+      val s = Stream(1, 2, 3, 4, 5)
+      assert(s startsWith s)
+    }
+
+    "fail for not-matching prefix" in {
+      val s = Stream(1, 2, 3, 4, 5)
+      val p = Stream(1, 2, 4)
+      assert(!(s startsWith p))
+    }
+
+    "fail for longer prefix" in {
+      val s = Stream(1, 2, 3)
+      val p = Stream(1, 2, 3, 4, 5)
+      assert(!(s startsWith p))
+    }
+  }
 }
