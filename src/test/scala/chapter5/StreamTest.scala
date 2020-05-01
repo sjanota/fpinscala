@@ -38,6 +38,39 @@ class StreamTest extends AnyWordSpec {
 
   }
 
+  "map" should {
+    "check finite stream" in {
+      assert(Stream(1, 2, 3).map(_ * 2).toList == List(2, 4, 6))
+    }
+
+    "check infinite stream" in {
+      assert(infiniteStream.map(_ * 2).take(3).toList == List(0, 2, 4))
+    }
+  }
+
+  "append" should {
+    "join two streams" in {
+      assert(
+        Stream(1, 2, 3).append(Stream(4, 5, 6)).toList == List(1, 2, 3, 4, 5,
+          6))
+    }
+  }
+
+  "flatMap" should {
+    "check finite stream" in {
+      assert(
+        Stream(1, 2, 3).flatMap(x => Stream(x, x)).toList == List(1, 1, 2, 2, 3,
+          3))
+    }
+
+    "check infinite stream" in {
+      assert(
+        infiniteStream.flatMap(x => Stream(x, x)).take(3).toList == List(0,
+                                                                         0,
+                                                                         1))
+    }
+  }
+
   def infiniteStream: Stream[Int] = {
     def next(i: Int): Stream[Int] =
       Stream.cons(i, next(i + 1))
