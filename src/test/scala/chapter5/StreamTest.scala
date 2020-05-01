@@ -10,6 +10,10 @@ class StreamTest extends AnyWordSpec {
     "return empty stream if first doesn't match" in {
       assert(Stream(3, 1, 2, 3).takeWhile(_ < 3).toList == List())
     }
+
+    "check infinite stream" in {
+      assert(infiniteStream.takeWhile(_ < 5).toList == List(0, 1, 2, 3, 4))
+    }
   }
 
   "forAll" should {
@@ -23,15 +27,15 @@ class StreamTest extends AnyWordSpec {
     }
   }
 
-  "takeWhile" should {
-    "check finite stream" in {
-      assert(Stream(1, 2, 3).takeWhile(_ < 5).toList == List(1, 2, 3))
-      assert(Stream(1, 2, 3).takeWhile(_ < 2).toList == List(1))
+  "headOption" should {
+    "return head if non-empty" in {
+      assert(infiniteStream.headOption.contains(0))
     }
 
-    "check infinite stream" in {
-      assert(infiniteStream.takeWhile(_ < 5).toList == List(0, 1, 2, 3, 4))
+    "return None if empty" in {
+      assert(Stream.empty.headOption.isEmpty)
     }
+
   }
 
   def infiniteStream: Stream[Int] = {

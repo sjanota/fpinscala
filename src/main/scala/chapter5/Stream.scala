@@ -3,10 +3,8 @@ package chapter5
 import chapter5.Stream._
 
 sealed trait Stream[+A] {
-  def headOption: Option[A] = this match {
-    case Empty      => None
-    case Cons(h, t) => Some(h())
-  }
+  def headOption: Option[A] =
+    foldRight(Option.empty[A])((h, _) => Option(h))
 
   def toList: List[A] = {
     val buffer = new collection.mutable.ListBuffer[A]
