@@ -20,11 +20,11 @@ sealed trait Stream[+A] {
     go(this)
   }
 
-  def take(n: Int): Stream[A] = this match {
-    case Cons(h, t) if n > 1  => cons(h(), t().take(n - 1))
-    case Cons(h, t) if n == 1 => cons(h(), empty)
-    case _                    => empty
-  }
+  def take(n: Int): Stream[A] =
+    unfold((n, this)) {
+      case (0, _) => Option.empty
+      case (i, s) => s.headOption.map(h => (h, (i - 1, s.drop(1))))
+    }
 
   @scala.annotation.tailrec
   final def drop(n: Int): Stream[A] = this match {
@@ -33,7 +33,10 @@ sealed trait Stream[+A] {
   }
 
   def takeWhile(p: A => Boolean): Stream[A] =
-    foldRight(empty[A])((h, b) => if (p(h)) cons(h, b) else empty)
+    unfold(this) { s =>
+      s.headOption.flatMap(h =>
+        if (p(h)) Option(h, s.drop(1)) else Option.empty)
+    }
 
   def foldRight[B](z: => B)(f: (A, => B) => B): B = this match {
     case Cons(h, t) => f(h(), t().foldRight(z)(f))
@@ -47,7 +50,9 @@ sealed trait Stream[+A] {
     foldRight(true)((h, b) => p(h) && b)
 
   def map[B](f: A => B): Stream[B] =
-    foldRight(empty[B])((a, b) => cons(f(a), b))
+    unfold(this) { s =>
+      s.headOption map (h => (f(h), s.drop(1)))
+    }
 
   def flatMap[B](f: A => Stream[B]): Stream[B] =
     foldRight(empty[B])((a, b) => f(a) append b)
