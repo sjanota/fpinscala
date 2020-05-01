@@ -75,11 +75,18 @@ sealed trait Stream[+A] {
       case (Cons(h1, t1), Cons(h2, t2)) => Some(f(h1(), h2()), (t1(), t2()))
     }
 
+  def zip[B](s: Stream[B]): Stream[(A, B)] =
+    zipWith(s)((_, _))
+
   def zipAll[B](s: Stream[B]): Stream[(Option[A], Option[B])] =
+    zipAllWith(s)((_, _))
+
+  def zipAllWith[B, C](s: Stream[B])(
+      f: (Option[A], Option[B]) => C): Stream[C] =
     unfold((this, s)) {
       case (Empty, Empty) => None
       case (s1, s2) =>
-        Some((s1.headOption, s2.headOption), (s1.drop(1), s2.drop(1)))
+        Some(f(s1.headOption, s2.headOption), (s1.drop(1), s2.drop(1)))
     }
 
   def startsWith[B >: A](s: Stream[B]): Boolean =
