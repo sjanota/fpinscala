@@ -75,4 +75,10 @@ class StreamTest extends AnyWordSpec {
       assert(Stream(1, 2, 3, 4).filter(_ % 2 == 0).toList == List(2, 4))
     }
   }
+
+  "fibs" should {
+    "return Fibonacci numbers" in {
+      assert(Stream.fibs.take(8).toList == List(0, 1, 1, 2, 3, 5, 8, 13))
+    }
+  }
 }

@@ -88,4 +88,11 @@ object Stream {
     next(n)
   }
 
+  val fibs: Stream[Int] = {
+    def next(a1: Int, a2: Int): Stream[Int] =
+      cons(a1, next(a2, a1 + a2))
+
+    next(0, 1)
+  }
+
 }
