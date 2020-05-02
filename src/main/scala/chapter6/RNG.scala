@@ -35,6 +35,13 @@ object RNG {
   def ints(count: Int): Rand[List[Int]] =
     Rand.sequence(List.fill(count)(int))
 
+  def nonNegativeLessThen(n: Int): Rand[Int] =
+    nonNegativeInt flatMap { i =>
+      val mod = i % n
+      if (i + (n - 1) - mod >= 0) Rand.unit(mod)
+      else nonNegativeInt
+    }
+
   type Rand[+A] = RNG => (A, RNG)
 
   object Rand {
@@ -44,17 +51,14 @@ object RNG {
       ra.map2(rb)((_, _))
 
     def sequence[A](rs: List[Rand[A]]): Rand[List[A]] =
-      rs.foldLeft[Rand[List[A]]](Rand.unit(List())) { (acc, r) =>
+      rs.foldLeft(Rand.unit(List())) { (acc, r) =>
         r.map2(acc)(_ :: _)
       }
   }
 
   implicit class RandOps[A](r: Rand[A]) {
     def map[B](f: A => B): Rand[B] =
-      rng => {
-        val (a, rng2) = r(rng)
-        (f(a), rng2)
-      }
+      flatMap(a => Rand.unit(f(a)))
 
     def flatMap[B](f: A => Rand[B]): Rand[B] =
       rng => {
