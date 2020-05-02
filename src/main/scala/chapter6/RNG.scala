@@ -1,8 +1,19 @@
 package chapter6
-
-import chapter6.RNG._
 trait RNG {
   def nextInt: (Int, RNG)
+}
+
+object RNG {
+  def apply(seed: Long): RNG = Simple(seed)
+
+  case class Simple(seed: Long) extends RNG {
+    override def nextInt: (Int, RNG) = {
+      val newSeed = (seed * 0x5DEECE66DL + 0xBL) & 0xFFFFFFFFFFFFL
+      val nextRNG = Simple(newSeed)
+      val n = (newSeed >>> 16).toInt
+      (n, nextRNG)
+    }
+  }
 
   val int: Rand[Int] = _.nextInt
 
@@ -21,28 +32,8 @@ trait RNG {
   def double3: Rand[(Double, Double, Double)] =
     for { d1 <- double; d2 <- double; d3 <- double } yield (d1, d2, d3)
 
-  def ints(count: Int): Rand[List[Int]] = {
-    @scala.annotation.tailrec
-    def go(n: Int, acc: Rand[List[Int]]): Rand[List[Int]] = {
-      if (n == 0) Rand.unit(List())
-      else go(n - 1, acc flatMap (is => int map (_ :: is)))
-    }
-
-    go(count, Rand.unit(List()))
-  }
-}
-
-object RNG {
-  def apply(seed: Long): RNG = Simple(seed)
-
-  case class Simple(seed: Long) extends RNG {
-    override def nextInt: (Int, RNG) = {
-      val newSeed = (seed * 0x5DEECE66DL + 0xBL) & 0xFFFFFFFFFFFFL
-      val nextRNG = Simple(newSeed)
-      val n = (newSeed >>> 16).toInt
-      (n, nextRNG)
-    }
-  }
+  def ints(count: Int): Rand[List[Int]] =
+    Rand.sequence(List.fill(count)(int))
 
   type Rand[+A] = RNG => (A, RNG)
 
@@ -51,6 +42,11 @@ object RNG {
 
     def both[A, B](ra: Rand[A], rb: Rand[B]): Rand[(A, B)] =
       ra.map2(rb)((_, _))
+
+    def sequence[A](rs: List[Rand[A]]): Rand[List[A]] =
+      rs.foldLeft[Rand[List[A]]](Rand.unit(List())) { (acc, r) =>
+        r.map2(acc)(_ :: _)
+      }
   }
 
   implicit class RandOps[A](r: Rand[A]) {
