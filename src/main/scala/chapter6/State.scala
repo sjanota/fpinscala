@@ -16,18 +16,6 @@ case class State[S, +A](f: S => (A, S)) {
   def map2[B, C](rb: State[S, B])(f: (A, B) => C): State[S, C] =
     for { a <- this; b <- rb } yield f(a, b)
 
-  def modify(f: S => S): State[S, Unit] =
-    for {
-      s <- get
-      _ <- set(f(s))
-    } yield ()
-
-  def get: State[S, S] =
-    State(s => (s, s))
-
-  def set(s: S): State[S, Unit] =
-    State(_ => ((), s))
-
 }
 
 object State {
@@ -36,9 +24,24 @@ object State {
     ra.map2(rb)((_, _))
 
   def sequence[S, A](rs: List[State[S, A]]): State[S, List[A]] =
-    rs.foldLeft(unit[S, List[A]](List())) { (acc, r) =>
-      r.map2(acc)(_ :: _)
+    traverse(rs)(identity)
+
+  def traverse[S, A, B](rs: List[A])(f: A => State[S, B]): State[S, List[B]] =
+    rs.foldRight(unit[S, List[B]](List())) { (a, acc) =>
+      f(a).map2(acc)(_ :: _)
     }
 
   def unit[S, A](a: A): State[S, A] = State(s => (a, s))
+
+  def modify[S](f: S => S): State[S, Unit] =
+    for {
+      s <- get
+      _ <- set(f(s))
+    } yield ()
+
+  def get[S]: State[S, S] =
+    State(s => (s, s))
+
+  def set[S](s: S): State[S, Unit] =
+    State(_ => ((), s))
 }
