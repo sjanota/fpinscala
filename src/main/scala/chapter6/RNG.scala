@@ -1,4 +1,7 @@
 package chapter6
+
+import chapter6.State._
+
 trait RNG {
   def nextInt: (Int, RNG)
 }
@@ -15,7 +18,7 @@ object RNG {
     }
   }
 
-  val int: Rand[Int] = _.nextInt
+  val int: Rand[Int] = (_: RNG).nextInt
 
   val nonNegativeInt: Rand[Int] =
     int map (n => if (n >= 0) n else -(n + 1))
@@ -42,10 +45,11 @@ object RNG {
       else nonNegativeInt
     }
 
-  type Rand[+A] = RNG => (A, RNG)
+  type Rand[A] = State[RNG, A]
 
   object Rand {
-    def unit[A](a: A): Rand[A] = rng => (a, rng)
+    def unit[A](a: A): Rand[A] =
+      (rng: RNG) => (a, rng)
 
     def both[A, B](ra: Rand[A], rb: Rand[B]): Rand[(A, B)] =
       ra.map2(rb)((_, _))
@@ -61,7 +65,7 @@ object RNG {
       flatMap(a => Rand.unit(f(a)))
 
     def flatMap[B](f: A => Rand[B]): Rand[B] =
-      rng => {
+      (rng: RNG) => {
         val (a, rng2) = r(rng)
         f(a)(rng2)
       }
