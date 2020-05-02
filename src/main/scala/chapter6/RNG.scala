@@ -66,22 +66,3 @@ object RNG {
   }
 
 }
-
-case class State[A, S](a: A, s: S) {
-
-  def map[B](f: A => B): State[B, S] =
-    State(f(a), s)
-
-  def mapState[S1](f: S => S1): State[A, S1] =
-    State(a, f(s))
-
-  def flatMap[B](f: (A, S) => State[B, S]): State[B, S] =
-    f(a, s)
-
-  def toTuple: (A, S) =
-    (a, s)
-}
-
-object State {
-  def apply[A, S](t: (A, S)): State[A, S] = State(t._1, t._2)
-}
