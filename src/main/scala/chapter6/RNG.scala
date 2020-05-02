@@ -13,10 +13,10 @@ trait RNG {
     nonNegativeInt map (_ / (Int.MaxValue.toDouble + 1))
 
   val intDouble: Rand[(Int, Double)] =
-    for { i <- int; d <- double } yield (i, d)
+    Rand.both(int, double)
 
   val doubleInt: Rand[(Double, Int)] =
-    intDouble map (t => (t._2, t._1))
+    Rand.both(double, int)
 
   def double3: Rand[(Double, Double, Double)] =
     for { d1 <- double; d2 <- double; d3 <- double } yield (d1, d2, d3)
@@ -49,6 +49,8 @@ object RNG {
   object Rand {
     def unit[A](a: A): Rand[A] = rng => (a, rng)
 
+    def both[A, B](ra: Rand[A], rb: Rand[B]): Rand[(A, B)] =
+      ra.map2(rb)((_, _))
   }
 
   implicit class RandOps[A](r: Rand[A]) {
@@ -63,6 +65,9 @@ object RNG {
         val (a, rng2) = r(rng)
         f(a)(rng2)
       }
+
+    def map2[B, C](rb: Rand[B])(f: (A, B) => C): Rand[C] =
+      for { a <- r; b <- rb } yield f(a, b)
   }
 
 }
