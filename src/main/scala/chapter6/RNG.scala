@@ -1,12 +1,13 @@
 package chapter6
 
-import chapter6.State._
-
 trait RNG {
   def nextInt: (Int, RNG)
 }
 
 object RNG {
+  type Rand[A] = State[RNG, A]
+  val Rand: State.type = State
+
   def apply(seed: Long): RNG = Simple(seed)
 
   case class Simple(seed: Long) extends RNG {
@@ -18,7 +19,7 @@ object RNG {
     }
   }
 
-  val int: Rand[Int] = (_: RNG).nextInt
+  val int: Rand[Int] = Rand(_.nextInt)
 
   val nonNegativeInt: Rand[Int] =
     int map (n => if (n >= 0) n else -(n + 1))
@@ -44,34 +45,5 @@ object RNG {
       if (i + (n - 1) - mod >= 0) Rand.unit(mod)
       else nonNegativeInt
     }
-
-  type Rand[A] = State[RNG, A]
-
-  object Rand {
-    def unit[A](a: A): Rand[A] =
-      (rng: RNG) => (a, rng)
-
-    def both[A, B](ra: Rand[A], rb: Rand[B]): Rand[(A, B)] =
-      ra.map2(rb)((_, _))
-
-    def sequence[A](rs: List[Rand[A]]): Rand[List[A]] =
-      rs.foldLeft(Rand.unit(List())) { (acc, r) =>
-        r.map2(acc)(_ :: _)
-      }
-  }
-
-  implicit class RandOps[A](r: Rand[A]) {
-    def map[B](f: A => B): Rand[B] =
-      flatMap(a => Rand.unit(f(a)))
-
-    def flatMap[B](f: A => Rand[B]): Rand[B] =
-      (rng: RNG) => {
-        val (a, rng2) = r(rng)
-        f(a)(rng2)
-      }
-
-    def map2[B, C](rb: Rand[B])(f: (A, B) => C): Rand[C] =
-      for { a <- r; b <- rb } yield f(a, b)
-  }
 
 }
