@@ -1,46 +1,34 @@
 package chapter6
 
+import chapter6.RNG._
 trait RNG {
   def nextInt: (Int, RNG)
 
-  def nonNegativeInt: (Int, RNG) =
-    nonNegativeIntS.toTuple
+  val int: Rand[Int] = _.nextInt
 
-  def intDouble: ((Int, Double), RNG) =
-    intDoubleS.toTuple
+  val nonNegativeInt: Rand[Int] =
+    int map (n => if (n >= 0) n else -(n + 1))
 
-  private def intDoubleS =
-    State(nextInt) flatMap ((i, s) => State(s.double) map ((i, _)))
+  val double: Rand[Double] =
+    nonNegativeInt map (_ / (Int.MaxValue.toDouble + 1))
 
-  def double: (Double, RNG) =
-    doubleS.toTuple
+  val intDouble: Rand[(Int, Double)] =
+    for { i <- int; d <- double } yield (i, d)
 
-  private def doubleS: State[Double, RNG] =
-    nonNegativeIntS map (_ / (Int.MaxValue.toDouble + 1))
+  val doubleInt: Rand[(Double, Int)] =
+    intDouble map (t => (t._2, t._1))
 
-  def nonNegativeIntS: State[Int, RNG] =
-    State(nextInt).map(n => if (n >= 0) n else -(n + 1))
+  def double3: Rand[(Double, Double, Double)] =
+    for { d1 <- double; d2 <- double; d3 <- double } yield (d1, d2, d3)
 
-  def doubleInt: ((Double, Int), RNG) =
-    intDoubleS.map(t => (t._2, t._1)).toTuple
-
-  def double3: ((Double, Double, Double), RNG) =
-    doubleS
-      .flatMap((d1, s1) =>
-        s1.doubleS.flatMap((d2, s2) => s2.doubleS.map((d1, d2, _))))
-      .toTuple
-
-  def ints(count: Int): (List[Int], RNG) = {
+  def ints(count: Int): Rand[List[Int]] = {
     @scala.annotation.tailrec
-    def go(n: Int, rng: RNG, acc: List[Int]): (List[Int], RNG) = {
-      if (n == 0) (acc, rng)
-      else {
-        val (i, rng0) = rng.nextInt
-        go(n - 1, rng0, i :: acc)
-      }
+    def go(n: Int, acc: Rand[List[Int]]): Rand[List[Int]] = {
+      if (n == 0) Rand.unit(List())
+      else go(n - 1, acc flatMap (is => int map (_ :: is)))
     }
 
-    go(count, this, Nil)
+    go(count, Rand.unit(List()))
   }
 }
 
@@ -54,6 +42,27 @@ object RNG {
       val n = (newSeed >>> 16).toInt
       (n, nextRNG)
     }
+  }
+
+  type Rand[+A] = RNG => (A, RNG)
+
+  object Rand {
+    def unit[A](a: A): Rand[A] = rng => (a, rng)
+
+  }
+
+  implicit class RandOps[A](r: Rand[A]) {
+    def map[B](f: A => B): Rand[B] =
+      rng => {
+        val (a, rng2) = r(rng)
+        (f(a), rng2)
+      }
+
+    def flatMap[B](f: A => Rand[B]): Rand[B] =
+      rng => {
+        val (a, rng2) = r(rng)
+        f(a)(rng2)
+      }
   }
 
 }
