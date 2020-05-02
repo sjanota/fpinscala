@@ -15,6 +15,19 @@ case class State[S, +A](f: S => (A, S)) {
 
   def map2[B, C](rb: State[S, B])(f: (A, B) => C): State[S, C] =
     for { a <- this; b <- rb } yield f(a, b)
+
+  def modify(f: S => S): State[S, Unit] =
+    for {
+      s <- get
+      _ <- set(f(s))
+    } yield ()
+
+  def get: State[S, S] =
+    State(s => (s, s))
+
+  def set(s: S): State[S, Unit] =
+    State(_ => ((), s))
+
 }
 
 object State {
