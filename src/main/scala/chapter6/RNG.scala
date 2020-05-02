@@ -7,6 +7,12 @@ trait RNG {
     val (n, nextRng) = nextInt
     (if (n >= 0) n else -(n + 1), nextRng)
   }
+
+  def double: (Double, RNG) = {
+    val (n, nextRng) = nonNegativeInt
+    (n / (Int.MaxValue.toDouble + 1), nextRng)
+  }
+
 }
 
 object RNG {
