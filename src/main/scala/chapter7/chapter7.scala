@@ -8,6 +8,9 @@ package object chapter7 {
   implicit class ParOps[A](a: Par[A]) {
     def run(s: ExecutorService): Future[A] = a(s)
 
+    def equal(s: ExecutorService)(other: Par[A]): Boolean =
+      a(s).get == other(s).get
+
     def map[B](f: A => B): Par[B] =
       a.map2(Par.unit(()))((aa, _) => f(aa))
 
