@@ -9,6 +9,15 @@ package object chapter7 {
 
   type Par[A] = ExecutorService => Future[A]
 
+  implicit class JoinPar[A](a: Par[Par[A]]) {
+    def join: Par[A] =
+      ec =>
+        new Future[A] {
+          override private[chapter7] def apply(k: A => Unit): Unit =
+            a(ec)(_(ec)(k))
+      }
+  }
+
   implicit class ParOps[A](a: Par[A]) {
     def run(s: ExecutorService): A = {
       val ref = new AtomicReference[A]()
@@ -67,6 +76,9 @@ package object chapter7 {
             b(ec)(combiner ! Right(_))
           }
       }
+
+    def flatMap[B](f: A => Par[B]): Par[B] =
+      map(f).join
   }
 
   object Par {
@@ -107,14 +119,13 @@ package object chapter7 {
       }
 
     def choice[A](p: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
-      choiceN(p map (if (_) 0 else 1))(List(t, f))
+      p flatMap (if (_) t else f)
 
     def choiceN[A](n: Par[Int])(choices: List[Par[A]]): Par[A] =
-      ec =>
-        new Future[A] {
-          override private[chapter7] def apply(k: A => Unit): Unit =
-            n(ec)(i => choices(i)(ec)(k))
-      }
+      n flatMap choices
+
+    def choiceMap[K, V](n: Par[K])(choices: Map[K, Par[V]]): Par[V] =
+      n flatMap choices
 
     private def eval(es: ExecutorService)(r: => Unit): Unit =
       es.submit(new Callable[Unit] {
