@@ -5,9 +5,10 @@ import scala.concurrent.duration.Duration
 package object chapter7 {
   type Par[A] = ExecutorService => Future[A]
 
-  object Par {
+  implicit class ParOps[A](a: Par[A]) {
+    def run(s: ExecutorService): Future[A] = a(s)
 
-    def map2[A, B, C](a: Par[A], b: Par[B])(f: (A, B) => C): Par[C] =
+    def map2[B, C](b: Par[B])(f: (A, B) => C): Par[C] =
       ec => {
         val af = a(ec)
         val bf = b(ec)
@@ -35,8 +36,12 @@ package object chapter7 {
           }
         }
       }
+  }
 
-    def run[A](s: ExecutorService)(a: Par[A]): Future[A] = a(s)
+  object Par {
+
+    def asyncF[A, B](f: A => B): A => Par[B] =
+      a => lazyUnit(f(a))
 
     def lazyUnit[A](a: => A): Par[A] = fork(unit(a))
 

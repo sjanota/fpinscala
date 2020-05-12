@@ -6,7 +6,7 @@ object examples {
       Par.unit(xs.headOption getOrElse 0)
     else {
       val (l, r) = xs.splitAt(xs.size / 2)
-      Par.map2(Par.fork(sum(l)), Par.fork(sum(r)))(_ + _)
+      Par.fork(sum(l)).map2(Par.fork(sum(r)))(_ + _)
     }
 
 }
