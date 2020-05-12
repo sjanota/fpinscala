@@ -7,33 +7,34 @@ package object chapter7 {
 
   object Par {
 
-    def map2[A, B, C](a: Par[A], b: Par[B])(f: (A, B) => C): Par[C] = ec => {
-      val af = a(ec)
-      val bf = b(ec)
-      return new Future[C] {
-        override def cancel(mayInterruptIfRunning: Boolean): Boolean =
-          af.cancel(mayInterruptIfRunning) && bf.cancel(mayInterruptIfRunning)
+    def map2[A, B, C](a: Par[A], b: Par[B])(f: (A, B) => C): Par[C] =
+      ec => {
+        val af = a(ec)
+        val bf = b(ec)
+        new Future[C] {
+          override def cancel(mayInterruptIfRunning: Boolean): Boolean =
+            af.cancel(mayInterruptIfRunning) && bf.cancel(mayInterruptIfRunning)
 
-        override def isCancelled: Boolean =
-          af.isCancelled || bf.isCancelled
+          override def isCancelled: Boolean =
+            af.isCancelled || bf.isCancelled
 
-        override def isDone: Boolean =
-          af.isDone && bf.isDone
+          override def isDone: Boolean =
+            af.isDone && bf.isDone
 
-        override def get(): C =
-          f(af.get, bf.get)
+          override def get(): C =
+            f(af.get, bf.get)
 
-        override def get(timeout: Long, unit: TimeUnit): C = {
-          val start = System.nanoTime()
-          val ag = af.get(timeout, unit)
-          val end = System.nanoTime()
-          val d = Duration(timeout, unit) - Duration(end - start,
-                                                     TimeUnit.NANOSECONDS)
-          val bg = bf.get(d.length, d.unit)
-          f(ag, bg)
+          override def get(timeout: Long, unit: TimeUnit): C = {
+            val start = System.nanoTime()
+            val ag = af.get(timeout, unit)
+            val end = System.nanoTime()
+            val d = Duration(timeout, unit) - Duration(end - start,
+                                                       TimeUnit.NANOSECONDS)
+            val bg = bf.get(d.length, d.unit)
+            f(ag, bg)
+          }
         }
       }
-    }
 
     def run[A](s: ExecutorService)(a: Par[A]): Future[A] = a(s)
 
