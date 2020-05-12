@@ -5,36 +5,36 @@ import java.util.concurrent.Executors
 import org.scalatest.flatspec.AnyFlatSpec
 
 class ExamplesTests extends AnyFlatSpec {
-  private val ec = Executors.newFixedThreadPool(4)
+  private val ec = Executors.newSingleThreadExecutor()
 
   "sum" should "sum numbers" in {
     val p = examples.sum(Vector(1, 2, 3, 4))
-    assert(p(ec).get == 10)
+    assert(p.run(ec) == 10)
   }
 
   "max" should "pick highest number" in {
     val p = examples.max(Vector(1, 5, 2, 7))
-    assert(p(ec).get.contains(7))
+    assert(p.run(ec).contains(7))
   }
 
   "max" should "pick the only number" in {
     val p = examples.max(Vector(3))
-    assert(p(ec).get.contains(3))
+    assert(p.run(ec).contains(3))
   }
 
   "max" should "return none on empty seq" in {
     val p = examples.max(Vector())
-    assert(p(ec).get.isEmpty)
+    assert(p.run(ec).isEmpty)
   }
 
   "sortPar" should "sort numbers" in {
     val p = examples.sortPar(Par.unit(List(3, 1, 4, 2)))
-    assert(p(ec).get == List(1, 2, 3, 4))
+    assert(p.run(ec) == List(1, 2, 3, 4))
   }
 
   "parFilter" should "filter even numbers" in {
     val p = examples.parFilter(List(3, 1, 4, 2))(_ % 2 == 0)
-    assert(p(ec).get == List(2, 4))
+    assert(p.run(ec) == List(2, 4))
   }
 
   "countWords" should "count words" in {
@@ -44,6 +44,10 @@ class ExamplesTests extends AnyFlatSpec {
         "Experiment with writing a few.",
         "Here are some ideas:"
       ))
-    assert(p(ec).get == 19)
+    assert(p.run(ec) == 19)
+  }
+
+  "map2" should "not block" in {
+    assert(Par.lazyUnit(3).map2(Par.lazyUnit(2))(_ + _).run(ec) == 5)
   }
 }

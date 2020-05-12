@@ -1,15 +1,27 @@
-import java.util.concurrent.{ExecutorService, Future, TimeUnit}
-
-import scala.concurrent.duration.Duration
+import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.{Callable, CountDownLatch, ExecutorService}
 
 package object chapter7 {
+
+  sealed trait Future[A] {
+    private[chapter7] def apply(k: A => Unit): Unit
+  }
+
   type Par[A] = ExecutorService => Future[A]
 
   implicit class ParOps[A](a: Par[A]) {
-    def run(s: ExecutorService): Future[A] = a(s)
+    def run(s: ExecutorService): A = {
+      val ref = new AtomicReference[A]()
+      val latch = new CountDownLatch(1)
+      a(s) { a =>
+        ref.set(a); latch.countDown()
+      }
+      latch.await()
+      ref.get()
+    }
 
     def equal(s: ExecutorService)(other: Par[A]): Boolean =
-      a(s).get == other(s).get
+      a.run(s) == other.run(s)
 
     def map[B](f: A => B): Par[B] =
       a.map2(Par.unit(()))((aa, _) => f(aa))
@@ -31,32 +43,29 @@ package object chapter7 {
         .map2(e)(_(_))
 
     def map2[B, C](b: Par[B])(f: (A, B) => C): Par[C] =
-      ec => {
-        val af = a(ec)
-        val bf = b(ec)
+      ec =>
         new Future[C] {
-          override def cancel(mayInterruptIfRunning: Boolean): Boolean =
-            af.cancel(mayInterruptIfRunning) && bf.cancel(mayInterruptIfRunning)
+          override private[chapter7] def apply(k: C => Unit): Unit = {
+            var ar = Option.empty[A]
+            var br = Option.empty[B]
 
-          override def isCancelled: Boolean =
-            af.isCancelled || bf.isCancelled
+            val combiner = Actor[Either[A, B]](ec) {
+              case Left(aa) =>
+                br match {
+                  case None     => ar = Some(aa)
+                  case Some(bb) => k(f(aa, bb))
+                }
 
-          override def isDone: Boolean =
-            af.isDone && bf.isDone
+              case Right(bb) =>
+                ar match {
+                  case None     => br = Some(bb)
+                  case Some(aa) => k(f(aa, bb))
+                }
+            }
 
-          override def get(): C =
-            f(af.get, bf.get)
-
-          override def get(timeout: Long, unit: TimeUnit): C = {
-            val start = System.nanoTime()
-            val ag = af.get(timeout, unit)
-            val end = System.nanoTime()
-            val d = Duration(timeout, unit) - Duration(end - start,
-                                                       TimeUnit.NANOSECONDS)
-            val bg = bf.get(d.length, d.unit)
-            f(ag, bg)
+            a(ec)(combiner ! Left(_))
+            b(ec)(combiner ! Right(_))
           }
-        }
       }
   }
 
@@ -85,20 +94,22 @@ package object chapter7 {
     def lazyUnit[A](a: => A): Par[A] = fork(unit(a))
 
     def unit[A](a: A): Par[A] =
-      _ => UnitFuture(a)
+      _ =>
+        new Future[A] {
+          def apply(k: A => Unit): Unit = k(a)
+      }
 
     def fork[A](a: => Par[A]): Par[A] =
-      ec => ec.submit(() => a(ec).get)
+      es =>
+        new Future[A] {
+          override private[chapter7] def apply(k: A => Unit): Unit =
+            eval(es)(a(es)(k))
+      }
 
-    private case class UnitFuture[A](get: A) extends Future[A] {
-      override def cancel(mayInterruptIfRunning: Boolean): Boolean = false
-
-      override def isCancelled: Boolean = false
-
-      override def isDone: Boolean = true
-
-      override def get(timeout: Long, unit: TimeUnit): A = get
-    }
+    def eval(es: ExecutorService)(r: => Unit): Unit =
+      es.submit(new Callable[Unit] {
+        override def call(): Unit = r
+      })
 
   }
 
