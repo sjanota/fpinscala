@@ -50,4 +50,9 @@ class ExamplesTests extends AnyFlatSpec {
   "map2" should "not block" in {
     assert(Par.lazyUnit(3).map2(Par.lazyUnit(2))(_ + _).run(ec) == 5)
   }
+
+  "choice" should "chose" in {
+    assert(Par.choice(Par.unit(true))(Par.unit(1), Par.unit(2)).run(ec) == 1)
+    assert(Par.choice(Par.unit(false))(Par.unit(1), Par.unit(2)).run(ec) == 2)
+  }
 }

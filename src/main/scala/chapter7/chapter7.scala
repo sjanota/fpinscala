@@ -106,7 +106,17 @@ package object chapter7 {
             eval(es)(a(es)(k))
       }
 
-    def eval(es: ExecutorService)(r: => Unit): Unit =
+    def choice[A](p: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
+      choiceN(p map (if (_) 0 else 1))(List(t, f))
+
+    def choiceN[A](n: Par[Int])(choices: List[Par[A]]): Par[A] =
+      ec =>
+        new Future[A] {
+          override private[chapter7] def apply(k: A => Unit): Unit =
+            n(ec)(i => choices(i)(ec)(k))
+      }
+
+    private def eval(es: ExecutorService)(r: => Unit): Unit =
       es.submit(new Callable[Unit] {
         override def call(): Unit = r
       })
