@@ -16,6 +16,7 @@ package object chapter7 {
           override private[chapter7] def apply(k: A => Unit): Unit =
             a(ec)(_(ec)(k))
       }
+
   }
 
   implicit class ParOps[A](a: Par[A]) {
@@ -79,6 +80,9 @@ package object chapter7 {
 
     def flatMap[B](f: A => Par[B]): Par[B] =
       map(f).join
+
+    def strangeMap2[B, C](b: Par[B])(f: (A, B) => C): Par[C] =
+      flatMap(aa => b.flatMap(bb => Par.unit(f(aa, bb))))
   }
 
   object Par {
