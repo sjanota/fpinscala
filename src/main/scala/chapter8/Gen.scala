@@ -12,10 +12,25 @@ case class Gen[A](sample: State[RNG, A]) {
       aa <- sample
       bb <- other.sample
     } yield f(aa, bb))
+
+  def flatMap[B](f: A => Gen[B]): Gen[B] =
+    Gen(sample flatMap (f(_).sample))
+
+  def listOfN(size: Gen[Int]): Gen[List[A]] =
+    size flatMap (n => Gen(State.traverse(List.range(0, n))(_ => sample)))
 }
 
 object Gen {
   def listOf[A](g: Gen[A]): Gen[List[A]] = ???
+
+  def union[A](g1: Gen[A], g2: Gen[A]): Gen[A] =
+    boolean flatMap (if (_) g1 else g2)
+
+  def weighted[A](g1: (Gen[A], Double), g2: (Gen[A], Double)): Gen[A] =
+    Gen(RNG.double) flatMap { d =>
+      if (d > (g1._2 / (g1._2 + g2._2))) g1._1
+      else g2._1
+    }
 
   def alphaNumericN(n: Int): Gen[String] =
     listOfN(n, alphaNumericChar) map (_.mkString)
@@ -38,18 +53,15 @@ object Gen {
   def stringN(n: Int): Gen[String] =
     listOfN(n, char) map (_.mkString)
 
-  def listOfN[A](n: Int, g: Gen[A]): Gen[Seq[A]] =
-    Gen(State.traverse(List.range(0, n))(_ => g.sample))
+  def listOfN[A](n: Int, g: Gen[A]): Gen[List[A]] =
+    g.listOfN(unit(n))
 
   def char: Gen[Char] =
     choose(0, 255) map (_.toChar)
 
   def choose(min: Int, max: Int): Gen[Int] =
-    Gen(RNG.double map (d => Math.round(d * (max - min).toDouble + min).toInt))
+    Gen(RNG.double) map (d => Math.round(d * (max - min).toDouble + min).toInt)
 
-  def oneOf[A](as: Gen[A]*): Gen[A] = {
-    val n: Gen[Int] = choose(0, as.length - 1)
-    val allGen: Gen[Seq[A]] = Gen(State.sequence(as map (_.sample)))
-    allGen.map2(n)(_(_))
-  }
+  def oneOf[A](as: Gen[A]*): Gen[A] =
+    choose(0, as.length - 1) flatMap as
 }
