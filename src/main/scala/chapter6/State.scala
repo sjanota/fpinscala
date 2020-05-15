@@ -23,10 +23,10 @@ object State {
   def both[S, A, B](ra: State[S, A], rb: State[S, B]): State[S, (A, B)] =
     ra.map2(rb)((_, _))
 
-  def sequence[S, A](rs: List[State[S, A]]): State[S, List[A]] =
+  def sequence[S, A](rs: Seq[State[S, A]]): State[S, Seq[A]] =
     traverse(rs)(identity)
 
-  def traverse[S, A, B](rs: List[A])(f: A => State[S, B]): State[S, List[B]] =
+  def traverse[S, A, B](rs: Seq[A])(f: A => State[S, B]): State[S, Seq[B]] =
     rs.foldRight(unit[S, List[B]](List())) { (a, acc) =>
       f(a).map2(acc)(_ :: _)
     }

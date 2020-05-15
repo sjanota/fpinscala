@@ -36,7 +36,7 @@ object RNG {
   def double3: Rand[(Double, Double, Double)] =
     for { d1 <- double; d2 <- double; d3 <- double } yield (d1, d2, d3)
 
-  def ints(count: Int): Rand[List[Int]] =
+  def ints(count: Int): Rand[Seq[Int]] =
     Rand.sequence(List.fill(count)(int))
 
   def nonNegativeLessThen(n: Int): Rand[Int] =

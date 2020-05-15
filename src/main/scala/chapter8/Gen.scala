@@ -12,7 +12,6 @@ case class Gen[A](sample: State[RNG, A]) {
       aa <- sample
       bb <- other.sample
     } yield f(aa, bb))
-
 }
 
 object Gen {
@@ -22,10 +21,7 @@ object Gen {
     listOfN(n, alphaNumericChar) map (_.mkString)
 
   def alphaNumericChar: Gen[Char] =
-    oneOf(choose(65, 90), choose(97, 122)) map (_.toChar)
-
-  def oneOf[A](a1: Gen[A], a2: Gen[A]): Gen[A] =
-    option(a1).map2(a2)((oa1, a2) => oa1 getOrElse a2)
+    oneOf(choose(65, 90), choose(97, 122), choose(48, 57)) map (_.toChar)
 
   def option[A](a: Gen[A]): Gen[Option[A]] =
     boolean.map2(a)((isEmpty, aa) => if (isEmpty) None else Some(aa))
@@ -42,7 +38,7 @@ object Gen {
   def stringN(n: Int): Gen[String] =
     listOfN(n, char) map (_.mkString)
 
-  def listOfN[A](n: Int, g: Gen[A]): Gen[List[A]] =
+  def listOfN[A](n: Int, g: Gen[A]): Gen[Seq[A]] =
     Gen(State.traverse(List.range(0, n))(_ => g.sample))
 
   def char: Gen[Char] =
@@ -50,4 +46,10 @@ object Gen {
 
   def choose(min: Int, max: Int): Gen[Int] =
     Gen(RNG.double map (d => Math.round(d * (max - min).toDouble + min).toInt))
+
+  def oneOf[A](as: Gen[A]*): Gen[A] = {
+    val n: Gen[Int] = choose(0, as.length - 1)
+    val allGen: Gen[Seq[A]] = Gen(State.sequence(as map (_.sample)))
+    allGen.map2(n)(_(_))
+  }
 }
