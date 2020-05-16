@@ -52,4 +52,18 @@ class PropTests extends AnyFlatSpec {
     val prop = forAll(Gen.choose(0, 10), name)(_ < 3)
     assert(prop.run(100, rng).asInstanceOf[Falsified].propName == name)
   }
+
+  "&&" should "preserve prop name on failure" in {
+    val prop = forAll(Gen.listOfN(10, Gen.boolean), "prop1")(_.length == 3) && forAll(
+      Gen.choose(0, 10),
+      "prop2")(_ < 11)
+    assert(prop.run(100, rng).asInstanceOf[Falsified].propName == "prop1")
+  }
+
+  "||" should "preserve prop name on failure" in {
+    val prop = forAll(Gen.listOfN(10, Gen.boolean), "prop1")(_.length == 10) && forAll(
+      Gen.choose(0, 10),
+      "prop2")(_ < 3)
+    assert(prop.run(100, rng).asInstanceOf[Falsified].propName == "prop2")
+  }
 }
