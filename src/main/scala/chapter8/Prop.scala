@@ -32,7 +32,9 @@ object Prop {
     }
   }
 
-  case class Falsified(failure: FailedCase, successes: SuccessCount)
+  case class Falsified(propName: String,
+                       failure: FailedCase,
+                       successes: SuccessCount)
       extends Result {
     override def isFalsified: Boolean = true
   }

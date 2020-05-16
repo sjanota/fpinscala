@@ -3,16 +3,17 @@ import chapter6.RNG
 import chapter8.Prop.{Falsified, Passed}
 
 package object chapter8 {
-  def forAll[A](g: Gen[A])(p: A => Boolean): Prop = Prop { (n, rng) =>
-    randomStream(g, rng) zip Stream.from(0) take n map {
-      case (a, i) =>
-        try {
-          if (p(a)) Passed
-          else Falsified(a.toString, i)
-        } catch {
-          case e: Exception => Falsified(buildMsg(a, e), i)
-        }
-    } find (_.isFalsified) getOrElse Passed
+  def forAll[A](g: Gen[A], name: String = "")(p: A => Boolean): Prop = Prop {
+    (n, rng) =>
+      randomStream(g, rng) zip Stream.from(0) take n map {
+        case (a, i) =>
+          try {
+            if (p(a)) Passed
+            else Falsified(name, a.toString, i)
+          } catch {
+            case e: Exception => Falsified(name, buildMsg(a, e), i)
+          }
+      } find (_.isFalsified) getOrElse Passed
   }
 
   def buildMsg[A](a: A, e: Exception): String =

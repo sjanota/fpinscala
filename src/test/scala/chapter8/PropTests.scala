@@ -1,7 +1,7 @@
 package chapter8
 
 import chapter6.RNG
-import chapter8.Prop.Passed
+import chapter8.Prop.{Falsified, Passed}
 import org.scalatest.flatspec.AnyFlatSpec
 
 class PropTests extends AnyFlatSpec {
@@ -45,5 +45,11 @@ class PropTests extends AnyFlatSpec {
     val prop = forAll(Gen.choose(0, 10))(_ < 3) || forAll(
       Gen.listOfN(10, Gen.boolean))(_.length == 11)
     assert(prop.run(100, rng).isFalsified)
+  }
+
+  "forAll" should "include property name in failure" in {
+    val name = "is smaller then 3"
+    val prop = forAll(Gen.choose(0, 10), name)(_ < 3)
+    assert(prop.run(100, rng).asInstanceOf[Falsified].propName == name)
   }
 }
