@@ -24,7 +24,8 @@ case class Gen[A](sample: State[RNG, A]) {
 }
 
 object Gen {
-  def listOf[A](g: Gen[A]): Gen[List[A]] = ???
+  def listOf[A](g: Gen[A]): SGen[List[A]] =
+    SGen(n => listOfN(n, g))
 
   def union[A](g1: Gen[A], g2: Gen[A]): Gen[A] =
     boolean flatMap (if (_) g1 else g2)
