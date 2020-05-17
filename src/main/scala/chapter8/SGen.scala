@@ -9,8 +9,8 @@ case class SGen[A](forSize: Int => Gen[A]) {
   def map2[B, C](other: SGen[B])(f: (A, B) => C): SGen[C] =
     SGen(n => forSize(n).map2(other.forSize(n))(f))
 
-  def flatMap[B](f: A => Gen[B]): SGen[B] =
-    SGen(n => forSize(n).flatMap(f))
+  def flatMap[B](f: A => SGen[B]): SGen[B] =
+    SGen(n => forSize(n).flatMap(f(_).forSize(n)))
 }
 
 object SGen {

@@ -44,4 +44,16 @@ object Prop {
     override def isFalsified: Boolean = false
   }
 
+  def run(p: Prop,
+          maxSize: MaxSize = 100,
+          testCases: TestCases = 100,
+          rng: RNG = RNG(System.currentTimeMillis())): Unit = {
+    p.run(maxSize, testCases, rng) match {
+      case Falsified(propName, msg, successes) =>
+        println(s"! Falsified after $successes passed tests:\n $msg")
+      case Passed =>
+        println(s"+ OK. Passed $testCases test cases.")
+    }
+  }
+
 }

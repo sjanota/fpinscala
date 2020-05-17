@@ -27,6 +27,12 @@ object Gen {
   def listOf[A](g: Gen[A]): SGen[List[A]] =
     SGen(n => listOfN(n, g))
 
+  def nonEmptyListOf[A](g: Gen[A]): SGen[List[A]] =
+    SGen(n => listOfN(n + 1, g))
+
+  def sized[A](f: Int => Gen[A]): SGen[A] =
+    SGen(f)
+
   def union[A](g1: Gen[A], g2: Gen[A]): Gen[A] =
     boolean flatMap (if (_) g1 else g2)
 
