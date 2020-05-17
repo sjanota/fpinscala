@@ -3,13 +3,13 @@ package chapter8
 import chapter6.RNG
 import chapter8.Prop._
 
-case class Prop(run: (TestCases, RNG) => Result) {
-  def &&(other: Prop): Prop = Prop { (n, rng) =>
-    run(n, rng) map (_ => other.run(n, rng))
+case class Prop(run: (MaxSize, TestCases, RNG) => Result) {
+  def &&(other: Prop): Prop = Prop { (max, n, rng) =>
+    run(max, n, rng) map (_ => other.run(max, n, rng))
   }
 
-  def ||(other: Prop): Prop = Prop { (n, rng) =>
-    run(n, rng) orElse (() => other.run(n, rng))
+  def ||(other: Prop): Prop = Prop { (max, n, rng) =>
+    run(max, n, rng) orElse (() => other.run(max, n, rng))
   }
 }
 
@@ -17,6 +17,7 @@ object Prop {
   type TestCases = Int
   type FailedCase = String
   type SuccessCount = Int
+  type MaxSize = Int
 
   sealed trait Result {
     def isFalsified: Boolean
