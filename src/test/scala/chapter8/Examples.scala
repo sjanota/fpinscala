@@ -12,4 +12,19 @@ class Examples extends AnyFlatSpec {
 
     Prop.run(maxProp)
   }
+
+  "list sorted" should "work" in {
+    val prop = forAll(Gen.listOf(smallInt)) { ns =>
+      val sorted = ns.sorted
+
+      @scala.annotation.tailrec
+      def validate(l: List[Int]): Boolean =
+        if (l.isEmpty) true
+        else !l.tail.exists(_ < l.head) && validate(l.tail)
+
+      validate(sorted)
+    }
+
+    Prop.run(prop)
+  }
 }
