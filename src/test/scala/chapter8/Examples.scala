@@ -1,9 +1,11 @@
 package chapter8
 
-import chapter8.examples.smallInt
+import chapter8.Prop.forAll
 import org.scalatest.flatspec.AnyFlatSpec
 
 class Examples extends AnyFlatSpec {
+  val smallInt = Gen.choose(-10, 10)
+
   "max of list" should "Work" in {
     val maxProp = forAll(Gen.nonEmptyListOf(smallInt)) { ns =>
       val max = ns.max

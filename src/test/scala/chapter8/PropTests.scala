@@ -1,7 +1,7 @@
 package chapter8
 
 import chapter6.RNG
-import chapter8.Prop.{Falsified, Passed}
+import chapter8.Prop._
 import org.scalatest.flatspec.AnyFlatSpec
 
 class PropTests extends AnyFlatSpec {
